@@ -182,6 +182,7 @@ Docker daemon启动时会在主机创建一个Linux网桥（默认是docker0,可
 以图5-5为例，容器1和容器4同属于一个网络，容器1需要通过256号VxLAN隧道访问另一台容器4。Docker通过VxLAN和Linux网桥实现可跨主机的虚拟子网功能。
 
 Docker Overlay命令实例：
+
 	##主机1
 	$ docker network create -d overlay dev  #创建overlay 网络
 	$ docker run -tid --publish-service test.dev ubuntu：latest bash  #启动overlay 网络
