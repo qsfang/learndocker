@@ -389,3 +389,38 @@ Contiv Netplugin特性
 - 能够和非容器环境兼容协作，不依赖物理网络具体细节；
 - 即时生效的容器网络Policy/ACL/QoS规则。
 
+
+
+### 6.3 Docker多主机网络方案对比 ###
+参考：[http://xelatex.github.io/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/](http://xelatex.github.io/2015/11/15/Battlefield-Calico-Flannel-Weave-and-Docker-Overlay-Network/)
+
+#### 6.3.1 对比方案和对比指标 ####
+**对比方案：**Calico, Flannel, Weave and Docker Overlay Network   
+**对比指标：**    
+
+- Network Model - What kind of network model are used to support multi-host network.
+- Application Isolation - Support what level and kind of application isolation of containers.
+- Name Service - DNS lookup with simple hostname or DNS rules.
+- Distributed Storage Requirements - Whether an external distributed storage is required, e.g. etcd or consul.
+- Encryption Channel - Whether data and infomation tranvers can put in an encryption channel.
+Partially Connected Network Support - Whether the system can run on a partially connected host network.
+- Seperate vNIC for Container - Whether a seperate NIC is generated for container.
+- IP Overlap Support - Whether the same IP can be allocated to different containers.
+- Container Subnet Restriction - Whether container’s subnet should not be the same as host’s.
+- Protocol Support - What kind of Layer-3 or Layer-4 protocols are supported.
+
+
+#### 6.3.2 结论####
+
+ |Calico     | Flannel | Weave |Docker Overlay Network|
+------------- | -------------|------------- | -------------| -------------|
+Network Model  | Pure Layer-3 Solution |  VxLAN or UDP Channel   |  VxLAN or UDP Channel| VxLAN
+Application Isolation | Profile Schema | CIDR Schema             |  CIDR Schema         |CIDR Schema
+Protocol Support  | TCP, UDP, ICMP & ICMPv6|   ALL           |ALL |ALL  
+Name Service|No|No|Yes|No
+Distributed Storage Requirements  |	Yes |    	Yes  | No	|Yes     |
+Encryption Channel | No |TLS	|NaCl Library|No		
+Partially Connected Network Support | No|No|Yes|No
+Seperate vNIC for Container|No|No|Yes|No
+IP Overlap Support | No |	Maybe |	Maybe |	Maybe
+Container Subnet Restriction|	No|	No	| Yes, configurable after start	|Yes, not configurable after start
