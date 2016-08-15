@@ -117,7 +117,94 @@ Note that a Service can map an incoming port to any targetPort. By default the t
 Kubernetes Services support TCP and UDP for protocols. The default is TCP.
 
 
+#### 9.3.2 Service Cluster IP and Kube-proxy ####
+每个代理节点都运行了一个kube-proxy进程。这个进程从服务进程那边拿到Service和Endpoint对象的变化。 对每一个Service, 它在本地打开一个端口。 到这个端口的任意连接都会代理到后端Pod集合中的一个Pod IP和端口。在创建了服务后，服务Endpoint模型会体现后端Pod的IP和端口列表，kube-proxy就是从这个endpoint维护的列表中选择服务后端的。另外Service对象的sessionAffinity属性也会帮助kube-proxy来选择哪个具体的后端。缺省情况下，后端Pod的选择是随机的。可以设置service.spec.sessionAffinity 成"ClientIP"来指定同一个ClientIP的流量代理到同一个后端。在实现上，kube-proxy会用IPtables规则把访问Service的Cluster IP和端口的流量重定向到这个本地端口。
 
-9.1.2 Kubernetes工作流程图 
+当Service被创建时，Kubernetes给它分配一个地址10.0.0.1。这个地址从我们启动API的service-cluster-ip-range参数(旧版本为portal_net参数)指定的地址池中分配，比如--service-cluster-ip-range=10.0.0.0/16。假设这个Service的端口是1234。集群内的所有kube-proxy都会注意到这个Service。当proxy发现一个新的service后，它会在本地节点打开一个任意端口，建相应的iptables规则，重定向服务的IP和port到这个新建的端口，开始接受到达这个服务的连接。
+
+客户端访问Service流程如图9-4所示，当一个客户端访问这个service时，这些iptable规则就开始起作用，客户端的流量被重定向到kube-proxy为这个service打开的端口上，kube-proxy随机选择一个后端pod来服务客户。
+
+![](pics\k8s-cluster-ip.jpg)  
+图9-4 客户端访问Service流程
+
+**1. 内部使用者的服务发现**
+
+Kubernetes在一个集群内创建的对象或者在代理集群节点上发出访问的客户端我们称之为**内部使用者**。要把服务暴露给内部使用者，Kubernetes支持两种方式：环境变量和DNS。
+
+- **环境变量**:当kubelet在某个节点上启动一个Pod时，它会给这个Pod的容器为当前运行的Service设置一系列环境变量，这样Pod就可以访问这些Service了。**注意，只有在某个Service后创建的Pod才会有这个Service的环境变量。**
+> 一般地，环境变量设置为{SVCNAME}_SERVICE_HOST和{SVCNAME}_SERVICE_PORT变量, 其中{SVCNAME}是Service名字变成大写，中划线变成下划线。比如Service "redis-master"，它的端口是 TCP  6379，分配到的Cluster IP地址是 10.0.0.11，kubelet可能会产生下面的变量给新创建的Pod容器：
+
+		REDIS_MASTER_SERVICE_HOST= 10.0.0.11
+		REDIS_MASTER_SERVICE_PORT=6379
+		REDIS_MASTER_PORT=tcp://10.0.0.11:6379
+		REDIS_MASTER_PORT_6379_TCP=tcp://10.0.0.11:6379
+		REDIS_MASTER_PORT_6379_TCP_PROTO=tcp
+		REDIS_MASTER_PORT_6379_TCP_PORT=6379
+		REDIS_MASTER_PORT_6379_TCP_ADDR= 10.0.0.11
+
+- **DNS**：一个可选的Kubernetes附件（强烈建议用户使用）是DNS服务。它跟踪集群中Service对象，为每个Service对象创建DNS记录。这样所有的Pod就可以通过DNS访问服务了。
+> 比如说我们在Kubernetes 名字空间"my-ns"中有个叫my-service的服务，DNS服务会创建一条"my-service.my-ns"的DNS记录。同在这个命名空间的Pod就可以通过"my-service"来得到这个Service分配到的Cluster IP，在其它命名空间的Pod则可以用全限定名"my-service.my-ns"来获得这个Service的地址。
+
+**2. 外部访问Service**
+  
+For some parts of your application (e.g. frontends) you may want to expose a Service onto an external (outside of your cluster, maybe public internet) IP address, other services should be visible only from inside of the cluster.
+
+Kubernetes ServiceTypes allow you to specify what kind of service you want. The default and base type is ClusterIP, which exposes a service to connection from inside the cluster. **NodePort** and **LoadBalancer** are two types that expose services to external traffic.
+
+Valid values for the ServiceType field are:
+
+- **ClusterIP:** use a cluster-internal IP only - this is the default and is discussed above. Choosing this value means that you want this service to be reachable only from inside of the cluster.
+- **NodePort:** on top of having a cluster-internal IP, expose the service on a port on each node of the cluster (the same port on each node). You’ll be able to contact the service on any <NodeIP>:NodePort address.
+- **LoadBalancer:** on top of having a cluster-internal IP and exposing service on a NodePort also, ask the cloud provider for a load balancer which forwards to the Service exposed as a <NodeIP>:NodePort for each Node.
+
+- **Type NodePort**
+
+If you set the type field to "NodePort", the Kubernetes master will allocate a port from a flag-configured range (default: 30000-32767), and each Node will proxy that port (the same port number on every Node) into your Service. That port will be reported in your Service’s spec.ports[*].nodePort field.
+
+If you want a specific port number, you can specify a value in the nodePort field, and the system will allocate you that port or else the API transaction will fail (i.e. you need to take care about possible port collisions yourself). The value you specify must be in the configured range for node ports.
+
+This gives developers the freedom to set up their own load balancers, to configure cloud environments that are not fully supported by Kubernetes, or even to just expose one or more nodes’ IPs directly.
+
+Note that this Service will be visible as both <NodeIP>:spec.ports[*].nodePort and spec.clusterIp:spec.ports[*].port.
+
+- **Type LoadBalancer**
+
+On cloud providers which support external load balancers, setting the type field to "LoadBalancer" will provision a load balancer for your Service. The actual creation of the load balancer happens asynchronously, and information about the provisioned balancer will be published in the Service’s status.loadBalancer field. For example:
+
+	{
+    	"kind": "Service",
+	    "apiVersion": "v1",
+	    "metadata": {
+	        "name": "my-service"
+		    },
+	    "spec": {
+	        "selector": {
+            "app": "MyApp"
+        	},
+        	"ports": [
+            	{
+               	 	"protocol": "TCP",
+               	 	"port": 80,
+               	 	"targetPort": 9376,
+                	"nodePort": 30061
+            	}
+        	],
+        	"clusterIP": "10.0.171.239",
+        	"loadBalancerIP": "78.11.24.19",
+        	"type": "LoadBalancer"
+    	},
+    	"status": {
+        	"loadBalancer": {
+            	"ingress": [
+                	{
+                    	"ip": "146.148.47.155"
+                	}
+            	]
+        	}
+    	}
+	}
+Traffic from the external load balancer will be directed at the backend Pods, though exactly how that works depends on the cloud provider. Some cloud providers allow the loadBalancerIP to be specified. In those cases, the load-balancer will be created with the user-specified loadBalancerIP. If the loadBalancerIP field is not specified, an ephemeral IP will be assigned to the loadBalancer. If the loadBalancerIP is specified, but the cloud provider does not support the feature, the field will be ignored.
+
+### 9.4 Kubernetes工作流程图
 
 ![](pics\k8s-workflow.jpg)
