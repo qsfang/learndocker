@@ -5,7 +5,7 @@
 ### 3.1 Docker image是什么？ ###
 **Docker image 是用来启动容器的只读模板，是容器启动所需要的rootfs，类似于虚拟机所使用的镜像。**  
 
-![](pics\docker-img.jpg)  
+![](pics/docker-img.jpg)  
 图3-1　Docker 镜像的典型表示法
 
 
@@ -26,7 +26,7 @@
 ### 3.2 Docker image的"build,ship,run" ###
 Docker 内嵌了一系列命令制作、管理、上传和下载镜像。可以调用REST API 给Docker daemon 发送相关命令，也可以使用client 端提供的CLI 命令完成操作。图3-2总结了Docker image生命周期图。
 
-![](pics\docker-life.jpg) 
+![](pics/docker-life.jpg) 
 图3-2　Docker image 生命周期
 
  

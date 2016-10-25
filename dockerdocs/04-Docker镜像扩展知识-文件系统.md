@@ -9,7 +9,7 @@ Docker在启动容器的时候，需要创建文件系统，为rootfs提供挂�
 
 ### 4.1 Linux文件系统 ###
 典型的Linux文件系统由bootfs和rootfs两部分组成，bootfs(boot file system)主要包含 bootloader和kernel，bootloader主要是引导加载kernel，当kernel被加载到内存中后， bootfs就被umount了。 rootfs (root file system) 包含的就是典型 Linux 系统中的/dev，/proc，/bin，/etc等标准目录和文件。
-![](pics\linuxfs.png)  
+![](pics/linuxfs.png)  
 
 图4-1 Linux文件系统
 
@@ -33,7 +33,7 @@ Snapshot是Lvm提供的一种特性，它可以在不中断服务运行的情况
 
 Thin-Provisioning是一项利用虚拟化方法减少物理存储部署的技术，可最大限度提升存储空间利用率。下图中展示了某位用户向服务器管理员请求分配10TB的资源的情形。实际情况中这个数值往往是峰值，根据使用情况，分配2TB就已足够。因此，系统管理员准备2TB的物理存储，并给服务器分配10TB的虚拟卷。服务器即可基于仅占虚拟卷容量1/5的现有物理磁盘池开始运行。这样的“始于小”方案能够实现更高效地利用存储容量。
 
-![](pics\Thin-Provisioning.png)  
+![](pics/Thin-Provisioning.png)  
 图4-2 Thin-Provisioning
 
 
@@ -166,7 +166,7 @@ the allocation of new blocks as usual.
 ### 4.2 Docker 镜像文件系统 ###
 
 Docker镜像的典型结构如下图4-3。传统的Linux加载bootfs时会先将rootfs设为read-only，然后在系统自检之后将rootfs从read-only改为read-write，然后我们就可以在rootfs上进行写和读的操作了。但Docker的镜像却不是这样，它在bootfs自检完毕之后并不会把rootfs的read-only改为read-write。而是利用union mount（UnionFS的一种挂载机制）将一个或多个read-only的rootfs加载到之前的read-only的rootfs层之上。在加载了这么多层的rootfs之后，仍然让它看起来只像是一个文件系统，在Docker的体系里把union mount的这些read-only的rootfs叫做Docker的镜像。但是，此时的每一层rootfs都是read-only的，我们此时还不能对其进行操作。当我们创建一个容器，也就是将Docker镜像进行实例化，系统会在一层或是多层read-only的rootfs之上分配一层空的read-write的rootfs。
-![](pics\docker-img-struc.png)
+![](pics/docker-img-struc.png)
 
 图4-3 Docker镜像的典型结构
 

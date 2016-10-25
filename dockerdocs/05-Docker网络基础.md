@@ -15,7 +15,7 @@ Docker现有的网络模型主要是通过使用Network namespace、Linux Bridge
 
 **Linux bridge实现：**linux内核支持网口的桥接（目前只支持以太网接口）。但是与单纯的交换机不同，交换机只是一个二层设备，对于接收到的报文，要么转发、要么丢弃。小型 的交换机里面只需要一块交换芯片即可，并不需要CPU。而运行着linux内核的机器本身就是一台主机，有可能就是网络报文的目的地。其收到的报文除了转 发和丢弃，还可能被送到网络协议栈的上层（网络层），从而被自己消化。linux内核是通过一个虚拟的网桥设备来实现桥接的。这个虚拟设备可以绑定若干个以太网接口设备，从而将它们桥接起来。
 
-![](pics\linux-bridge.jpg)  
+![](pics/linux-bridge.jpg)  
 图5-1 Linux Bridge示意图
 
 如图5-1所示，网桥设备br0绑定了eth0和eth1。对于网络协议栈的上层来说，只看得到br0，因为桥接是在数据链路层实现的，上层不需要关心桥接的细节。于是协 议栈上层需要发送的报文被送到br0，网桥设备的处理代码再来判断报文该被转发到eth0或是eth1，或者两者皆是；反过来，从eth0或从eth1接 收到的报文被提交给网桥br0的处理代码，在这里会判断报文该转发、丢弃、或提交到协议栈上层。而有时候eth0、eth1也可能会作为报文的源地址或目的地址，直接参与报文的发送与接收（从而绕过网桥）。
@@ -56,7 +56,7 @@ Docker现有的网络模型主要是通过使用Network namespace、Linux Bridge
 	ip netns exec ns1 ip link set dev tap1 up
 	ip netns exec ns2 ip link set dev tap2 up
 
-![](pics\simple-veth-pair.png)  
+![](pics/simple-veth-pair.png)  
 图5-2 Simple Veth Pair
 
 **如果多个network namespace需要进行通信，则需要借助bridge（图5-3）：**  
@@ -98,7 +98,7 @@ Docker现有的网络模型主要是通过使用Network namespace、Linux Bridge
 	ip link set dev br-tap2 up
 	#
 
-![](pics\veth-pair-linuxbridge.png)  
+![](pics/veth-pair-linuxbridge.png)  
 图5-3 Linux Bridge with two Veth Pairs  
 **Veth内核实现：** `//drivers/net/veth.c`
 
@@ -116,7 +116,7 @@ Docker网络成为广为诟病的一大缺陷，在部署大规模Docker集群�
 
 Libnetwork项目从lincontainer和Docker代码的分离早在Docker 1.7版本就已经完成了（从Docker 1.6版本的网络代码中抽离）。在此之后，容器的网络接口就成为了一个个可替换的插件模块。概括来说，libnetwork提出了新的容器网络模型（Container Network Model，简称CNM），定义了标准的API用于为容器配置网络。只要符合这个模型的网络接口就能被用于容器之间通信，而通信的过程和细节可以完全由网络接口来实现。
 
-![](pics\CNM.jpg)  
+![](pics/CNM.jpg)  
 图5-5 CNM概念模型
 
 如图5-5所示，CNM网络模型中定义了三个的术语：Sandbox（沙盒）、Endpoint（端点）和Network，它们分别是容器通信中『容器网络环境』、『容器虚拟网卡』和『主机虚拟网卡/网桥』的抽象。
@@ -159,7 +159,7 @@ Docker网络的初始化动作包括：
 
 Docker daemon启动时会在主机创建一个Linux网桥（默认是docker0,可通过-b参数手动指定）。容器启动时，Docker会创建一对veth-pair(虚拟网络接口)设备，veth设备的特点是成对存在，从一端进入的数据会同时出现在另一端。Docker会将一端挂载到docker0网桥上，另一端放入容器的Network Namespace内，从而实现容器与主机通信的目的。Bridge模式下Docker容器的网络连接如图5-4所示。容器eth0网卡从docker0网桥所在的IP网段中选取一个未使用的IP，容器的IP在容器重启的时候会改变。docker0的IP为所有容器的默认网关。  
 
-![](pics\docker-bridge.png)  
+![](pics/docker-bridge.png)  
 图5-4 Bridge 模式下的Docker 网络连接图
 
 **容器与外界通信为NAT，容器对外是不可见的。在桥接模式下，Docker容器与Internet的通信，以及不同容器之间的通信都是通过iptables规则控制的。** docker网络相关的命令会转换成对应的iptables规则，例如：  
@@ -176,7 +176,7 @@ Docker daemon启动时会在主机创建一个Linux网桥（默认是docker0,可
  Overlay网络模型比较复杂，底层需要类似consul或etcd的KV存储系统进行消息同步，核心是通过Linux网桥与Vxlan隧道实现跨主机划分子网。  
  如图5-5所示，每创建一个网络，Docker会在主机上创建一个单独的沙盒，沙盒的实质是是一个Network Namespace。在沙河中，Docker会创建名为br0的网桥，并在网桥上增加一个Vxlan接口,每个网络占用一个vxlan ID，当前Docker 创建vxlan隧道的ID为256-1000，因而最多可以创建745个网络。当添加一个容器到某一个网络上时，Docker会创建一对veth网卡设备，一段连接到此网络相关沙盒的br0网桥上，另一端放入容器的沙盒内，并设置br0的IP地址作为容器路由默认的网关地址，从而实现加入网络的目的。
 
-![](pics\docker-overlay.jpg)
+![](pics/docker-overlay.jpg)
 图5-5 Overlay模式的网络拓扑图
 
 以图5-5为例，容器1和容器4同属于一个网络，容器1需要通过256号VxLAN隧道访问另一台容器4。Docker通过VxLAN和Linux网桥实现可跨主机的虚拟子网功能。
@@ -208,7 +208,7 @@ ipvlan驱动方式不需要通过linux bridge这一层进行处理，所以ipvla
 
 **1.MacVlan Bridge Mode使用实例：**  
 
-![](pics\macvlan_bridge_simple.png)  
+![](pics/macvlan_bridge_simple.png)  
  图5-6 MacVlan Bridge Mode Example Usage  
 Create the macvlan network：
 
@@ -221,7 +221,7 @@ Create the macvlan network：
 
 **2.IPVlan L2 Mode使用实例：** 
 
-![](pics\ipvlan_l2_simple.png)  
+![](pics/ipvlan_l2_simple.png)  
 图5-7 Ipvlan L2 Mode Example Usage   
 
 
@@ -236,7 +236,7 @@ Create the ipvlan network:
 
 **3. IPVlan L3 Mode 使用实例：** 
 
-![](pics\ipvlan-l3.png)  
+![](pics/ipvlan-l3.png)  
 图5-9 IPVlan L3 Mode Example
 
 **Create the Ipvlan L3 network:**

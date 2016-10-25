@@ -10,7 +10,7 @@ Kubernetes是Google开源的容器集群管理系统。它构建于docker技术�
 
 图9-1位Kubernetes的总体概览，基本上可以从操作对象、功能组件和功能特性等三个维度来认识Kubernetes。
 
-![](pics\k8s-frame.jpg)  
+![](pics/k8s-frame.jpg)  
 图9-1 Kubernetes架构图
 
 #### 9.1.1. Kubernetes操作对象 ####
@@ -27,7 +27,7 @@ Kubernetes以RESTFul形式开放接口，用户可操作的REST对象有三个�
 
 如下图9-2所示，有三个pod都有label为"app=backend"，创建service和replicationController时可以指定同样的label:"app=backend"，再通过label selector机制，就将它们与这三个pod关联起来了。例如，当有其他frontend pod访问该service时，自动会转发到其中的一个backend pod。
 
-![](pics\k8s-pod.jpg)
+![](pics/k8s-pod.jpg)
 图9-2 Kubernetes Pod-Label示意图
        
 
@@ -35,7 +35,7 @@ Kubernetes以RESTFul形式开放接口，用户可操作的REST对象有三个�
 
 下图9-3是官方文档里的集群架构图，一个典型的master/slave模型。
 
-![](pics\k8s-slavemaster.jpg)    
+![](pics/k8s-slavemaster.jpg)    
 图9-3 Kubernetes集群架构图---master/slave模型
 
 **master**运行三个组件：
@@ -124,7 +124,7 @@ Kubernetes Services support TCP and UDP for protocols. The default is TCP.
 
 客户端访问Service流程如图9-4所示，当一个客户端访问这个service时，这些iptable规则就开始起作用，客户端的流量被重定向到kube-proxy为这个service打开的端口上，kube-proxy随机选择一个后端pod来服务客户。
 
-![](pics\k8s-cluster-ip.jpg)  
+![](pics/k8s-cluster-ip.jpg)  
 图9-4 客户端访问Service流程
 
 **1. 内部使用者的服务发现**
@@ -207,4 +207,4 @@ Traffic from the external load balancer will be directed at the backend Pods, th
 
 ### 9.4 Kubernetes工作流程图
 
-![](pics\k8s-workflow.jpg)
+![](pics/k8s-workflow.jpg)

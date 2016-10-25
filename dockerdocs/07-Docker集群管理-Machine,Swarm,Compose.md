@@ -75,7 +75,7 @@ Swarm设计的架构遵循“Swap,Plug and Play”的原则。比如，你可以
 #### 7.2.2 Docker Swarm内部架构  ####
 Swarm的目标是使用同Docker Engine一样的API，将Docker client对API Endpoint的请求，在发往Swarm管理下的Docker引擎节点组成的集群的过程中，可以根据配置好的调度策略、约束规则，分发到集群中的某个引擎节点上去处理。而对客户端来说，这些完全透明。这样实现的主要优势在于既有的工具和API可以像单机版一样继续在Swarm集群上工作和使用。Swarm的功能框架如图7-1所示，Swarm由Discovery Service模块， Scheduler模块和Leadership模块组成。
 
-![](pics\docker-swarm.png)  
+![](pics/docker-swarm.png)  
 图7-1 Swarm的功能框架
 
 **1、Discovery Service**  

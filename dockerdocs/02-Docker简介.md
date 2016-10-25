@@ -7,7 +7,7 @@ Docker优势：其对镜像的打包封装，以及引入的Docker Registry 对�
 化，以及Docker 在分层镜像应用上的创新，Docker 在磁盘占用、性能和效率方面相较于传统的虚拟化都有非常明显的提高。
 
 #### 2.1.2 Docker架构介绍 ####
-![](pics\docker-frame.png)  
+![](pics/docker-frame.png)  
 图2-1　Docker 架构图
 
 从图2-1 可知，Docker 并没有传统虚拟化中的Hypervisor 层。因为Docker 是基于容器技术的轻量级虚拟化，相对于传统的虚拟化技术，省去了Hypervisor 层的开销，而且其虚拟化技术是基于内核的Cgroup 和Namespace 技术，处理逻辑与内核深度融合，所以在很多方面，它的性能与物理机非常接近。  

@@ -161,7 +161,7 @@ Weave routers learn which peer host a particular MAC address resides on. They co
 
 Weave routers establish TCP connections to each other, over which they perform a protocol handshake and subsequently exchange topology information. These connections are encrypted if so configured. Peers also establish UDP “connections”, possibly encrypted, for the aforementioned packet forwarding. These “connections” are duplex and can traverse firewalls.  
  
-![](pics\weave.png)
+![](pics/weave.png)
 图6-1 Weave网络框架结构
 
 Weave的框架如图6-1所示，它包含两大主要组件：
@@ -216,7 +216,7 @@ Flannel的设计目的就是为集群中的所有节点重新规划IP地址的�
 **2. Flannel工作原理**  
 Flannel实质上是一种“覆盖网络(overlay network)”，也就是将TCP数据包装在另一种网络包里面进行路由转发和通信，目前已经支持UDP、VxLAN、AWS VPC和GCE路由等数据转发方式。默认的节点间数据通信方式是UDP转发。
   
-![](pics\flannel.png)
+![](pics/flannel.png)
 图6-2 Flannel网络架构
 
 Flannel框架如图6-2所示，数据从源容器中发出后，经由所在主机的docker0虚拟网卡转发到flannel0虚拟网卡，这是个P2P的虚拟网卡，flanneld服务监听在网卡的另外一端。
@@ -270,7 +270,7 @@ SocketPlane是Github上关注度较高的Docker SDN方案。SocketPlane被Docker
 SocketPlane底层使用OVS管理网络，每台主机上，会创建一个名为docker0-ovs的OVS网桥，SocketPlane创建的容器通过docker0-ovs通信。集群内不同主机间，利用vxlan tunnel通过docker0-ovs上的vxlan端口互相通信。  
 SocketPlane的网络架构如图6-3所示。container与OVS网桥并非是通过一对veth pai通信的。每次运行`socketplane network create`命令时，都会在此条命令的docker0-ovs上新建一个OVS内部端口，用作网络的网关。例如新建名为“frontend”的网络，则有对应IP的名为“frontend”的OVS内部网关；同样的，默认的网络"default"有一个名为"default"的OVS内部端口作为网关。  
 
-![](pics\socketplane.jpg)
+![](pics/socketplane.jpg)
 图6-3 SocketPlane网络架构    
 
 不同主机之间通过vxlan tunnel通信，运行`ovs-vsctl show`命令可以更清晰地看到网桥结构。  
@@ -319,18 +319,18 @@ Socket的安装配置较为简单，只需运行源码目录下的scripts/instal
 Calico是一个纯3层的数据中心网络方案，而且无缝集成像OpenStack这种IaaS云架构，能够提供可控的VM、容器、裸机之间的IP通信。
 
 通过将整个互联网的可扩展IP网络原则压缩到数据中心级别，Calico在每一个计算节点利用Linux Kernel实现了一个高效的vRouter来负责数据转发，而每个vRouter通过BGP协议负责把自己上运行的workload的路由信息像整个Calico网络内传播——小规模部署可以直接互联，大规模下可通过指定的BGP route reflector来完成。这样保证最终所有的workload之间的数据流量都是通过IP路由的方式完成互联的。
-![](pics\calico-workload.png)
+![](pics/calico-workload.png)
 图6-4 Calico workload路由信息传播示意图  
 Calico节点组网可以直接利用数据中心的网络结构（无论是L2或者L3），不需要额外的NAT，隧道或者Overlay Network。如下图所示，这样保证这个方案的简单可控，而且没有封包解包，节约CPU计算资源的同时，提高了整个网络的性能。 
 
-![](pics\calico-packet.png)  
+![](pics/calico-packet.png)  
 图6-5 Calico数据包结构
  
 此外，Calico基于iptables还提供了丰富而灵活的网络Policy，保证通过各个节点上的ACLs来提供Workload的多租户隔离、安全组以及其他可达性限制等功能。
 
 **2. Calico框架**
 
-![](pics\calico-frame.png)  
+![](pics/calico-frame.png)  
 图6-6 Calico框架
 
 结合图6-6，Calico的核心组件如下：
@@ -365,11 +365,11 @@ Calico的两个网络概念：
 
 这样，跨主机的容期间通信就建立起来了，而且整个数据流中没有NAT、隧道，不涉及封包
 
-![](pics\calico-iprouting.png)  
+![](pics/calico-iprouting.png)  
 图6-7 Calico IP路由原理  
 
 **Calico的ACLs Profile主要依靠iptables和ipset来完成，提供的是可针对每个容器级别的规则定义。**
-![](pics\calico-acl.png)
+![](pics/calico-acl.png)
 图6-8 Calico 安全策略ACL
 
 
@@ -377,7 +377,7 @@ Calico的两个网络概念：
 
 Contiv是Cisco开源出来的针对容器的基础架构，主要功能是提供基于Policy的网络和存储管理，是面向微服务的一种新基架。
 
-![](pics\contiv.png)
+![](pics/contiv.png)
 图6-9 contiv虚拟网络架构
 
 Contiv能够和主流的容器编排系统整合，包括：Docker Swarm、Kubernetes、Mesos and Nomad。
